@@ -1,0 +1,12 @@
+name: PR Quality Gate
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder - will be replaced on Day 4
+        run: echo "CI pipeline placeholder"
