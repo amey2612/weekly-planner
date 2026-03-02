@@ -1,0 +1,71 @@
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+
+jobs:
+  build-test-deploy-api:
+    name: Build, Test and Deploy .NET API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore packages
+        run: dotnet restore backend/WeeklyPlanner.sln
+
+      - name: Build
+        run: dotnet build backend/WeeklyPlanner.sln --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test backend/WeeklyPlanner.sln --no-build --configuration Release --collect:"XPlat Code Coverage"
+
+      - name: Publish API
+        run: dotnet publish backend/WeeklyPlanner.API/WeeklyPlanner.API.csproj --configuration Release --output ./api-publish
+
+      - name: Deploy API to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'app-weeklyplanner-api'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./api-publish
+
+  build-deploy-functions:
+    name: Deploy Azure Functions
+    runs-on: ubuntu-latest
+    needs: build-test-deploy-api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore packages
+        run: dotnet restore backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj
+
+      - name: Build Functions
+        run: dotnet build backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj --no-restore --configuration Release
+
+      - name: Publish Functions
+        run: dotnet publish backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj --configuration Release --output ./func-publish
+
+      - name: Deploy to Azure Functions
+        uses: azure/functions-action@v1
+        with:
+          app-name: 'func-weeklyplanner-dev'
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          package: ./func-publish
