@@ -1,0 +1,28 @@
+# .NET build outputs
+bin/
+obj/
+*.user
+.vs/
+
+# .NET secrets — NEVER commit real secrets
+appsettings.Production.json
+
+# Angular
+node_modules/
+dist/
+.angular/
+
+# Azure Functions local connection strings
+local.settings.json
+
+# Environment files
+.env
+.env.local
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+coverage-report/
