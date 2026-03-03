@@ -15,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
 // Cosmos DB setup
 builder.Services.AddSingleton(s =>
@@ -72,6 +73,8 @@ builder.Services.AddScoped<ICosmosRepository<NotificationDocument>>(provider =>
 
 // application services
 builder.Services.AddScoped<ITeamMemberService, TeamMemberService>();
+builder.Services.AddScoped<IBacklogService, BacklogService>();
+builder.Services.AddScoped<IPlanningWeekService, PlanningWeekService>();
 
 var app = builder.Build();
 
@@ -79,6 +82,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WeeklyPlanner.API v1"));
 }
 
 app.UseHttpsRedirection();
