@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="WeeklyPlanner.API/WeeklyPlanner.API.csproj" />
+  <Project Path="WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj" />
+  <Project Path="WeeklyPlanner.Tests/WeeklyPlanner.Tests.csproj" />
+</Solution>
