@@ -22,13 +22,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore packages
-        run: dotnet restore backend/WeeklyPlanner.sln
+        run: dotnet restore backend/WeeklyPlanner.slnx
 
       - name: Build
-        run: dotnet build backend/WeeklyPlanner.sln --no-restore --configuration Release
+        run: dotnet build backend/WeeklyPlanner.slnx --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test backend/WeeklyPlanner.sln --no-build --configuration Release --collect:"XPlat Code Coverage"
+        run: dotnet test backend/WeeklyPlanner.slnx --no-build --configuration Release --collect:"XPlat Code Coverage"
 
       - name: Publish API
         run: dotnet publish backend/WeeklyPlanner.API/WeeklyPlanner.API.csproj --configuration Release --output ./api-publish
