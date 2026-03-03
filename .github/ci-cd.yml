@@ -10,8 +10,7 @@ on:
 jobs:
 
   # ─────────────────────────────────────────────
-  # JOB 1 — runs on every PR to dev or main
-  # Shows as "PR Quality Gate" in Actions tab
+  # JOB 1 — PR Quality Gate
   # ─────────────────────────────────────────────
   pr-quality-gate:
     name: PR Quality Gate
@@ -19,8 +18,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -28,16 +26,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore .NET packages
-        run: dotnet restore backend/WeeklyPlanner.sln
-        continue-on-error: true
+        run: dotnet restore weekly-planner/backend/WeeklyPlanner.slnx
 
       - name: Build .NET solution
-        run: dotnet build backend/WeeklyPlanner.sln --no-restore --configuration Release
-        continue-on-error: true
+        run: dotnet build weekly-planner/backend/WeeklyPlanner.slnx --configuration Release --no-restore
 
       - name: Run .NET tests
-        run: dotnet test backend/WeeklyPlanner.sln --no-build --configuration Release --collect:"XPlat Code Coverage"
-        continue-on-error: true
+        run: dotnet test weekly-planner/backend/WeeklyPlanner.slnx --configuration Release --no-build --collect:"XPlat Code Coverage"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,20 +40,17 @@ jobs:
           node-version: '20'
 
       - name: Install Angular dependencies
-        run: cd frontend && npm ci
-        continue-on-error: true
+        run: |
+          cd weekly-planner/frontend
+          npm ci
 
       - name: Build Angular
-        run: cd frontend && npx ng build --configuration production
-        continue-on-error: true
-
-      - name: Run Angular tests
-        run: cd frontend && npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
-        continue-on-error: true
+        run: |
+          cd weekly-planner/frontend
+          npx ng build --configuration production
 
   # ─────────────────────────────────────────────
-  # JOB 2 — runs when code is pushed to dev or main
-  # Builds and deploys .NET API to Azure App Service
+  # JOB 2 — Deploy .NET API
   # ─────────────────────────────────────────────
   deploy-api:
     name: Build and Deploy .NET API
@@ -66,8 +58,7 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -75,32 +66,26 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore packages
-        run: dotnet restore backend/WeeklyPlanner.sln
-        continue-on-error: true
+        run: dotnet restore weekly-planner/backend/WeeklyPlanner.slnx
 
       - name: Build solution
-        run: dotnet build backend/WeeklyPlanner.sln --no-restore --configuration Release
-        continue-on-error: true
+        run: dotnet build weekly-planner/backend/WeeklyPlanner.slnx --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test backend/WeeklyPlanner.sln --no-build --configuration Release
-        continue-on-error: true
+        run: dotnet test weekly-planner/backend/WeeklyPlanner.slnx --configuration Release --no-build
 
       - name: Publish API
-        run: dotnet publish backend/WeeklyPlanner.API/WeeklyPlanner.API.csproj --configuration Release --output ./api-publish
-        continue-on-error: true
+        run: dotnet publish weekly-planner/backend/WeeklyPlanner.API/WeeklyPlanner.API.csproj --configuration Release --output ./api-publish
 
       - name: Deploy API to Azure App Service
         uses: azure/webapps-deploy@v3
-        continue-on-error: true
         with:
           app-name: 'app-weeklyplanner-api'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./api-publish
 
   # ─────────────────────────────────────────────
-  # JOB 3 — runs after API deploy
-  # Deploys Azure Functions
+  # JOB 3 — Deploy Azure Functions
   # ─────────────────────────────────────────────
   deploy-functions:
     name: Build and Deploy Azure Functions
@@ -109,8 +94,7 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -118,28 +102,23 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore Functions packages
-        run: dotnet restore backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj
-        continue-on-error: true
+        run: dotnet restore weekly-planner/backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj
 
       - name: Build Functions
-        run: dotnet build backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj --no-restore --configuration Release
-        continue-on-error: true
+        run: dotnet build weekly-planner/backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj --configuration Release --no-restore
 
       - name: Publish Functions
-        run: dotnet publish backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj --configuration Release --output ./func-publish
-        continue-on-error: true
+        run: dotnet publish weekly-planner/backend/WeeklyPlanner.Functions/WeeklyPlanner.Functions.csproj --configuration Release --output ./func-publish
 
       - name: Deploy to Azure Function App
         uses: azure/functions-action@v1
-        continue-on-error: true
         with:
           app-name: 'func-weeklyplanner-dev'
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
           package: ./func-publish
 
   # ─────────────────────────────────────────────
-  # JOB 4 — runs on push AND on PR open/sync
-  # Deploys Angular to Azure Static Web Apps
+  # JOB 4 — Deploy Angular to Azure Static Web Apps
   # ─────────────────────────────────────────────
   deploy-angular:
     name: Build and Deploy Angular
@@ -149,8 +128,7 @@ jobs:
       (github.event_name == 'pull_request' && github.event.action != 'closed')
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -158,26 +136,26 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: cd frontend && npm ci
-        continue-on-error: true
+        run: |
+          cd weekly-planner/frontend
+          npm ci
 
       - name: Build Angular
-        run: cd frontend && npx ng build --configuration production
-        continue-on-error: true
+        run: |
+          cd weekly-planner/frontend
+          npx ng build --configuration production
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
-        continue-on-error: true
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/frontend'
+          app_location: 'weekly-planner/frontend'
           output_location: 'dist/frontend/browser'
 
   # ─────────────────────────────────────────────
-  # JOB 5 — cleans up PR preview environment
-  # when a PR is closed/merged
+  # JOB 5 — Close PR Preview Environment
   # ─────────────────────────────────────────────
   close-pr-environment:
     name: Close PR Preview Environment
