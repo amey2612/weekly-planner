@@ -1,5 +1,6 @@
 using Microsoft.Azure.Cosmos;
 using WeeklyPlanner.API.Interfaces;
+using WeeklyPlanner.API.Models;
 using WeeklyPlanner.API.Repositories;
 using WeeklyPlanner.API.Services;
 
@@ -32,11 +33,45 @@ builder.Services.AddSingleton(s =>
     return client.GetDatabase(databaseName);
 });
 
-// register generic repository
-builder.Services.AddScoped(typeof(ICosmosRepository<>), typeof(CosmosRepository<>));
+// register typed repositories with container names
+builder.Services.AddScoped<ICosmosRepository<TeamMemberDocument>>(provider =>
+{
+    var database = provider.GetRequiredService<Database>();
+    return new CosmosRepository<TeamMemberDocument>(database, "TeamMembers");
+});
+
+builder.Services.AddScoped<ICosmosRepository<PlanningWeekDocument>>(provider =>
+{
+    var database = provider.GetRequiredService<Database>();
+    return new CosmosRepository<PlanningWeekDocument>(database, "PlanningWeeks");
+});
+
+builder.Services.AddScoped<ICosmosRepository<PlanItemDocument>>(provider =>
+{
+    var database = provider.GetRequiredService<Database>();
+    return new CosmosRepository<PlanItemDocument>(database, "PlanItems");
+});
+
+builder.Services.AddScoped<ICosmosRepository<BacklogItemDocument>>(provider =>
+{
+    var database = provider.GetRequiredService<Database>();
+    return new CosmosRepository<BacklogItemDocument>(database, "BacklogItems");
+});
+
+builder.Services.AddScoped<ICosmosRepository<ProgressUpdateDocument>>(provider =>
+{
+    var database = provider.GetRequiredService<Database>();
+    return new CosmosRepository<ProgressUpdateDocument>(database, "ProgressUpdates");
+});
+
+builder.Services.AddScoped<ICosmosRepository<NotificationDocument>>(provider =>
+{
+    var database = provider.GetRequiredService<Database>();
+    return new CosmosRepository<NotificationDocument>(database, "Notifications");
+});
 
 // application services
-builder.Services.AddSingleton<ITeamMemberService, TeamMemberService>();
+builder.Services.AddScoped<ITeamMemberService, TeamMemberService>();
 
 var app = builder.Build();
 
