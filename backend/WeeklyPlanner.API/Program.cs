@@ -1,6 +1,7 @@
 using Microsoft.Azure.Cosmos;
 using WeeklyPlanner.API.Interfaces;
 using WeeklyPlanner.API.Repositories;
+using WeeklyPlanner.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,9 @@ builder.Services.AddSingleton(s =>
 
 // register generic repository
 builder.Services.AddScoped(typeof(ICosmosRepository<>), typeof(CosmosRepository<>));
+
+// application services
+builder.Services.AddSingleton<ITeamMemberService, TeamMemberService>();
 
 var app = builder.Build();
 
