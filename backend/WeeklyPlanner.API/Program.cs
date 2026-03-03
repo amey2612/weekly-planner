@@ -75,6 +75,7 @@ builder.Services.AddScoped<ICosmosRepository<NotificationDocument>>(provider =>
 builder.Services.AddScoped<ITeamMemberService, TeamMemberService>();
 builder.Services.AddScoped<IBacklogService, BacklogService>();
 builder.Services.AddScoped<IPlanningWeekService, PlanningWeekService>();
+builder.Services.AddScoped<IPlanItemService, PlanItemService>();
 
 var app = builder.Build();
 
