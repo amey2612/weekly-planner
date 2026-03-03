@@ -1,3 +1,5 @@
+using Azure.Messaging.ServiceBus;
+using System.Text.Json;
 using WeeklyPlanner.API.DTOs;
 using WeeklyPlanner.API.Interfaces;
 using WeeklyPlanner.API.Models;
@@ -8,13 +10,16 @@ namespace WeeklyPlanner.API.Services
     {
         private readonly ICosmosRepository<PlanningWeekDocument> _repository;
         private readonly ICosmosRepository<TeamMemberDocument> _teamRepo;
+        private readonly ServiceBusSender _sender;
 
         public PlanningWeekService(
             ICosmosRepository<PlanningWeekDocument> repository,
-            ICosmosRepository<TeamMemberDocument> teamRepo)
+            ICosmosRepository<TeamMemberDocument> teamRepo,
+            ServiceBusClient serviceBusClient)
         {
             _repository = repository;
             _teamRepo = teamRepo;
+            _sender = serviceBusClient.CreateSender("week-frozen");
         }
 
         public async Task<IEnumerable<PlanningWeekDocument>> GetAllAsync()
@@ -96,6 +101,18 @@ namespace WeeklyPlanner.API.Services
             week.State = "Frozen";
 
             await _repository.UpsertAsync(week);
+
+            // Publish Service Bus event
+            var evt = new WeekFrozenEvent
+            {
+                WeekId = week.Id,
+                FrozenAt = DateTime.UtcNow
+            };
+
+            var message = new ServiceBusMessage(
+                JsonSerializer.Serialize(evt));
+
+            await _sender.SendMessageAsync(message);
         }
 
         public async Task CloseAsync(string id)

@@ -12,5 +12,11 @@ namespace WeeklyPlanner.API.Interfaces
         Task RemoveAsync(string id, string weekId);
 
         Task MarkReadyAsync(string weekId, string memberId);
+
+        Task<PlanItemDocument> UpdateProgressAsync(
+            string id,
+            string weekId,
+            int completedHours,
+            string status);
     }
 }

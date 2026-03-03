@@ -121,5 +121,31 @@ namespace WeeklyPlanner.API.Services
 
             await _weekRepo.UpsertAsync(week);
         }
+
+        public async Task<PlanItemDocument> UpdateProgressAsync(
+            string id,
+            string weekId,
+            int completedHours,
+            string status)
+        {
+            var planItem = await _planRepo.GetByIdAsync(id, weekId);
+            if (planItem == null)
+                throw new InvalidOperationException("Plan item not found.");
+
+            var week = await _weekRepo.GetByIdAsync(weekId, weekId);
+            if (week == null)
+                throw new InvalidOperationException("Week not found.");
+
+            if (week.State == "Closed")
+                throw new InvalidOperationException("Cannot modify closed week.");
+
+            if (completedHours > planItem.CommittedHours)
+                throw new InvalidOperationException("Completed hours exceed committed.");
+
+            planItem.CompletedHours = completedHours;
+            planItem.Status = status;
+
+            return await _planRepo.UpsertAsync(planItem);
+        }
     }
 }

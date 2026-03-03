@@ -61,5 +61,28 @@ namespace WeeklyPlanner.API.Controllers
                 return Conflict(ex.Message);
             }
         }
+
+        [HttpPut("{id}/progress")]
+        public async Task<IActionResult> UpdateProgress(
+            string id,
+            [FromQuery] string weekId,
+            [FromQuery] int completedHours,
+            [FromQuery] string status)
+        {
+            try
+            {
+                var result = await _service.UpdateProgressAsync(
+                    id,
+                    weekId,
+                    completedHours,
+                    status);
+
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+        }
     }
 }

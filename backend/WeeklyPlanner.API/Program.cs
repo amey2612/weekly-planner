@@ -1,3 +1,4 @@
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Cosmos;
 using WeeklyPlanner.API.Interfaces;
 using WeeklyPlanner.API.Models;
@@ -72,10 +73,15 @@ builder.Services.AddScoped<ICosmosRepository<NotificationDocument>>(provider =>
 });
 
 // application services
+builder.Services.AddSingleton(sp =>
+    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]
+        ?? throw new InvalidOperationException("ServiceBus connection string not configured")));
+
 builder.Services.AddScoped<ITeamMemberService, TeamMemberService>();
 builder.Services.AddScoped<IBacklogService, BacklogService>();
 builder.Services.AddScoped<IPlanningWeekService, PlanningWeekService>();
 builder.Services.AddScoped<IPlanItemService, PlanItemService>();
+
 
 var app = builder.Build();
 
