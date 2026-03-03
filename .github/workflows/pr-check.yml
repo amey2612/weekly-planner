@@ -19,13 +19,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore NuGet packages
-        run: dotnet restore backend/WeeklyPlanner.sln
+        run: dotnet restore backend/WeeklyPlanner.slnx
 
       - name: Build solution
-        run: dotnet build backend/WeeklyPlanner.sln --no-restore --configuration Release
+        run: dotnet build backend/WeeklyPlanner.slnx --no-restore --configuration Release
 
       - name: Run all tests
-        run: dotnet test backend/WeeklyPlanner.sln --no-build --configuration Release --collect:"XPlat Code Coverage"
+        run: dotnet test backend/WeeklyPlanner.slnx --no-build --configuration Release --collect:"XPlat Code Coverage"
 
   frontend-check:
     name: Build and Test Angular
