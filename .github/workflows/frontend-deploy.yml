@@ -2,13 +2,13 @@ name: Deploy Angular to Azure Static Web Apps
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-deploy.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   build-and-deploy:
