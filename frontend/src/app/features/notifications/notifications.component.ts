@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { NavBarComponent } from '../../shared/components/nav-bar.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Notification } from '../../core/models/models';
@@ -9,7 +8,7 @@ import { Notification } from '../../core/models/models';
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [CommonModule, NavBarComponent],
+  imports: [CommonModule],
   template: `
     <div class="container" style="max-width:800px">
       <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">

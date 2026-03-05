@@ -1,14 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { NavBarComponent } from '../../shared/components/nav-bar.component';
 import { ApiService } from '../../core/services/api.service';
 import { PlanningWeek } from '../../core/models/models';
 
 @Component({
   selector: 'app-past-weeks',
   standalone: true,
-  imports: [CommonModule, NavBarComponent],
+  imports: [CommonModule],
   template: `
     <div class="container" style="max-width:960px">
       <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">

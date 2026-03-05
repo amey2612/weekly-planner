@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { NavBarComponent } from '../../shared/components/nav-bar.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -13,7 +12,7 @@ import {
 @Component({
   selector: 'app-plan-my-work',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavBarComponent],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="container" style="max-width:960px">
       <button class="button btn-secondary mb-4" (click)="router.navigate(['/home'])">← Home</button>

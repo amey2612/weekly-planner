@@ -40,7 +40,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
           app_location: '/frontend'
-          output_location: 'dist/frontend/browser'
+          output_location: 'dist/frontend'
 
   close-pr:
     name: Close Pull Request Environment
