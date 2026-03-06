@@ -12,7 +12,7 @@
       font-size: 90%;
     }
 
-    .theme-light {
+    :root[data-theme="light"] {
       --bg: #FFFFFF;
       --bg-surface: #F9FAFB;
       --text-primary: #111827;
@@ -44,7 +44,7 @@
       --tag-light-bg: #E5E7EB;
     }
 
-    .theme-dark {
+    :root[data-theme="dark"] {
       --bg: #111827;
       --bg-surface: #1F2937;
       --text-primary: #F9FAFB;
@@ -992,6 +992,8 @@
             <div class="mt-4">
               <button class="button btn-primary is-medium" :disabled="freezeErrors().length>0"
                 @click="confirmFreeze()">❄️ Freeze the Plan</button>
+              <button class="button btn-info is-small ml-3" @click="autoFillPlans()"
+                x-show="freezeErrors().length>0">Auto-fill Missing Hours</button>
               <button class="button btn-danger is-small ml-3" @click="confirmCancelPlanning()">Cancel Planning</button>
             </div>
           </div>
@@ -1046,7 +1048,8 @@
                 </header>
                 <section class="modal-card-body" style="background:var(--bg-surface);color:var(--text-primary)">
                   <p class="mb-3">Committed: <strong x-text="progressTA?.committedHours+'h'"></strong>. Currently:
-                    <strong x-text="progressTA?.hoursCompleted+'h'"></strong> done.</p>
+                    <strong x-text="progressTA?.hoursCompleted+'h'"></strong> done.
+                  </p>
                   <div class="field"><label class="label">Hours completed</label>
                     <div class="control"><input class="input" type="number" x-model.number="progForm.hours" step="0.5"
                         min="0"></div>
@@ -1444,6 +1447,7 @@
         importModal: false, importData: null, importFileName: '', importError: '',
 
         init() {
+          document.documentElement.setAttribute('data-theme', this.theme);
           if (!this.appSettings.setupComplete) { this.view = 'setup'; return }
           if (this.teamMembers.filter(m => m.isActive).length === 1 && this.teamMembers.find(m => m.isActive)?.isLead) {
             this.currentUserId = this.teamMembers.find(m => m.isActive).id; this.view = 'hub'
@@ -1451,7 +1455,7 @@
           this.$watch('toast', v => { if (v) setTimeout(() => this.toast = '', 3000) });
           this.$watch('errorMsg', v => { if (v) setTimeout(() => this.errorMsg = '', 5000) });
         },
-        toggleTheme() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; lsSet('wpt_theme', this.theme) },
+        toggleTheme() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; lsSet('wpt_theme', this.theme); document.documentElement.setAttribute('data-theme', this.theme); },
         save() {
           lsSet('wpt_appSettings', this.appSettings); lsSet('wpt_teamMembers', this.teamMembers);
           lsSet('wpt_backlogEntries', this.backlogEntries); lsSet('wpt_planningCycles', this.planningCycles);
@@ -1690,6 +1694,26 @@
           }
           return errs;
         },
+        autoFillPlans() {
+          const c = this.activeCycle(); if (!c) return;
+          for (const mid of c.participatingMemberIds) {
+            const p = this.getMemberPlan(mid);
+            if (p) p.isReady = true;
+          }
+          for (const cat of ['CLIENT_FOCUSED', 'TECH_DEBT', 'R_AND_D']) {
+            const budget = this.getCatBudget(cat);
+            const claimed = this.getCatClaimed(cat);
+            const diff = budget - claimed;
+            if (diff > 0) {
+              const dummyEntryId = uid();
+              this.backlogEntries.push({ id: dummyEntryId, title: 'Auto-fill ' + this.catLabel(cat) + ' ' + diff + 'h', description: 'Auto-generated for testing', category: cat, status: 'IN_PLAN', estimatedEffort: diff, createdBy: this.currentUserId, createdAt: new Date().toISOString() });
+              const p = this.getMemberPlan(this.currentUserId) || this.getMemberPlan(c.participatingMemberIds[0]);
+              this.taskAssignments.push({ id: uid(), memberPlanId: p.id, backlogEntryId: dummyEntryId, committedHours: diff, progressStatus: 'NOT_STARTED', hoursCompleted: 0, createdAt: new Date().toISOString() });
+              p.totalPlannedHours += diff;
+            }
+          }
+          this.save(); this.showToast('Auto-filled remaining hours for testing! You can now freeze.');
+        },
         confirmFreeze() {
           this.showConfirm('Freeze the Plan?', 'After this, nobody can change their hours. Team members will only report progress.', () => {
             if (this.freezeErrors().length > 0) { this.showError('Validation failed.'); return }
@@ -1847,11 +1871,40 @@
               { id: uid(), title: 'Add unit tests for payment module', description: 'Coverage is below 50%.', category: 'TECH_DEBT', status: 'AVAILABLE', estimatedEffort: 10, createdBy: m2.id, createdAt: new Date().toISOString() },
               { id: uid(), title: 'Experiment with LLM-based search', description: 'Prototype semantic search using embeddings.', category: 'R_AND_D', status: 'AVAILABLE', estimatedEffort: 15, createdBy: m1.id, createdAt: new Date().toISOString() },
               { id: uid(), title: 'Evaluate new caching strategy', description: 'Compare Redis Cluster vs Memcached.', category: 'R_AND_D', status: 'AVAILABLE', estimatedEffort: 6, createdBy: m4.id, createdAt: new Date().toISOString() },
-              { id: uid(), title: 'Build internal CLI tool', description: 'A command-line tool for common dev tasks.', category: 'R_AND_D', status: 'AVAILABLE', estimatedEffort: 8, createdBy: m3.id, createdAt: new Date().toISOString() },
               { id: uid(), title: 'Client SSO integration', description: 'Support SAML-based single sign-on for enterprise clients.', category: 'CLIENT_FOCUSED', status: 'AVAILABLE', estimatedEffort: 18, createdBy: m1.id, createdAt: new Date().toISOString() },
             ];
-            this.backlogEntries = entries; this.planningCycles = []; this.categoryAllocations = [];
-            this.memberPlans = []; this.taskAssignments = []; this.progressUpdates = [];
+            this.backlogEntries = entries;
+
+            const p1Id = uid(); const p2Id = uid();
+            this.planningCycles = [
+              { id: p1Id, planningDate: '2026-03-03', executionStartDate: '2026-03-04', executionEndDate: '2026-03-09', state: 'COMPLETED', participatingMemberIds: [m1.id, m2.id, m3.id, m4.id], teamCapacity: 120, createdAt: '2026-03-02T10:00:00Z' },
+              { id: p2Id, planningDate: '2026-03-10', executionStartDate: '2026-03-11', executionEndDate: '2026-03-16', state: 'COMPLETED', participatingMemberIds: [m1.id, m2.id, m3.id, m4.id], teamCapacity: 120, createdAt: '2026-03-09T10:00:00Z' }
+            ];
+
+            this.categoryAllocations = [
+              { id: uid(), cycleId: p1Id, category: 'CLIENT_FOCUSED', percentage: 50, budgetHours: 60 },
+              { id: uid(), cycleId: p1Id, category: 'TECH_DEBT', percentage: 30, budgetHours: 36 },
+              { id: uid(), cycleId: p1Id, category: 'R_AND_D', percentage: 20, budgetHours: 24 },
+              { id: uid(), cycleId: p2Id, category: 'CLIENT_FOCUSED', percentage: 40, budgetHours: 48 },
+              { id: uid(), cycleId: p2Id, category: 'TECH_DEBT', percentage: 40, budgetHours: 48 },
+              { id: uid(), cycleId: p2Id, category: 'R_AND_D', percentage: 20, budgetHours: 24 }
+            ];
+
+            this.memberPlans = []; this.taskAssignments = [];
+            for (const mid of [m1.id, m2.id, m3.id, m4.id]) {
+              const planId1 = uid(); const planId2 = uid();
+              this.memberPlans.push({ id: planId1, cycleId: p1Id, memberId: mid, isReady: true, totalPlannedHours: 30 });
+              this.memberPlans.push({ id: planId2, cycleId: p2Id, memberId: mid, isReady: true, totalPlannedHours: 30 });
+
+              this.taskAssignments.push({ id: uid(), memberPlanId: planId1, backlogEntryId: entries[0].id, committedHours: 15, progressStatus: 'COMPLETED', hoursCompleted: 15, createdAt: '2026-03-03T10:00:00Z' });
+              this.taskAssignments.push({ id: uid(), memberPlanId: planId1, backlogEntryId: entries[3].id, committedHours: 9, progressStatus: 'COMPLETED', hoursCompleted: 9, createdAt: '2026-03-03T10:00:00Z' });
+              this.taskAssignments.push({ id: uid(), memberPlanId: planId1, backlogEntryId: entries[6].id, committedHours: 6, progressStatus: 'COMPLETED', hoursCompleted: 6, createdAt: '2026-03-03T10:00:00Z' });
+
+              this.taskAssignments.push({ id: uid(), memberPlanId: planId2, backlogEntryId: entries[0].id, committedHours: 12, progressStatus: 'COMPLETED', hoursCompleted: 12, createdAt: '2026-03-10T10:00:00Z' });
+              this.taskAssignments.push({ id: uid(), memberPlanId: planId2, backlogEntryId: entries[4].id, committedHours: 12, progressStatus: 'COMPLETED', hoursCompleted: 12, createdAt: '2026-03-10T10:00:00Z' });
+              this.taskAssignments.push({ id: uid(), memberPlanId: planId2, backlogEntryId: entries[7].id, committedHours: 6, progressStatus: 'COMPLETED', hoursCompleted: 6, createdAt: '2026-03-10T10:00:00Z' });
+            }
+            this.progressUpdates = [];
             this.appSettings = { setupComplete: true, dataVersion: 1 };
             this.save(); this.currentUserId = null; this.view = 'identity';
             this.showToast('Sample data loaded! Pick a person to get started.');
