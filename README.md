@@ -3,8 +3,10 @@
 > A full-stack, event-driven weekly planning system built on Azure — enabling teams to plan, track, and close weekly work cycles with a strict 30-hour budget model and real-time async notifications.
 
 **Live Demo:**
+
 New link:
-- 🌐 link : https://wonderful-water-0443bf40f.6.azurestaticapps.net/
+- 🌐 link :https://demo-ebp3.vercel.app/
+
 Old link : expired on 12/03/2026
 - 🌐 link : https://wonderful-water-0443bf40f.6.azurestaticapps.net/
 
